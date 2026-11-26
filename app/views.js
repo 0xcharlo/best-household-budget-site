@@ -8,6 +8,7 @@ import {
   escapeHtml,
   fmtDate,
   goalsSummary,
+  incomeByCategory,
   monthTotals,
   monthTransactions,
   pct,
@@ -303,6 +304,12 @@ export function renderReports(state) {
   const top = spentSlices[0];
   const avgSpending = Math.round(series.reduce((s, m) => s + m.spending, 0) / series.length);
   const savingsRate = pct(totals.balance, totals.income);
+  // Side-business income and the two leisure/health categories, computed live
+  // from the month's transactions (never hardcoded) so the insight below stays
+  // true when the household adds or deletes a transaction.
+  const income = incomeByCategory(state);
+  const usaha = income['usaha'] ?? 0;
+  const hiburanKesehatan = (spent['hiburan'] ?? 0) + (spent['kesehatan'] ?? 0);
 
   return `
   <section class="page-head">
@@ -336,7 +343,7 @@ export function renderReports(state) {
         <li><strong>Kategori terbesar: ${escapeHtml(top.label)} (${rupiah(top.value)}).</strong> ${top.id === 'belanja' ? 'Wajar untuk keluarga empat orang, tapi sudah melewati anggaran — daftar belanja mingguan bisa menahan godaan.' : 'Periksa apakah ada yang bisa dinegosiasikan atau dijadwal ulang.'}</li>
         <li><strong>Tingkat menabung ${savingsRate}%.</strong> ${savingsRate >= 20 ? 'Di atas patokan 20% — keluarga ini menabung dengan sehat.' : 'Di bawah patokan 20%. Menahan satu kategori saja, misalnya makan di luar, sudah mengangkat angka ini.'}</li>
         <li><strong>Pengeluaran November ${totals.spending > avgSpending ? 'di atas' : 'di bawah'} rata-rata enam bulan (${rupiah(avgSpending)}).</strong> ${totals.spending > avgSpending ? 'Ada pos yang membengkak — cek halaman Anggaran.' : 'Bulan ini lebih hemat dari biasanya. Pertahankan.'}</li>
-        <li><strong>Pemasukan dari usaha sampingan:</strong> jualan kue Sari menambah ${rupiah(1250000)} bulan ini — hampir menutup seluruh belanja hiburan dan kesehatan.</li>
+        <li><strong>Pemasukan dari usaha sampingan:</strong> jualan kue Sari menambah ${rupiah(usaha)} bulan ini — ${usaha >= hiburanKesehatan ? `lebih dari cukup untuk menutup seluruh belanja hiburan dan kesehatan (${rupiah(hiburanKesehatan)})` : `menutup sebagian belanja hiburan dan kesehatan (${rupiah(hiburanKesehatan)})`}.</li>
       </ul>
       <h2>Sumber pemasukan</h2>
       <ul class="legend">${incomeCats.map((c) => {
